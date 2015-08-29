@@ -6,7 +6,7 @@ int main (int argc, char* argv[]) {
     int charCount = 0;
     int wordCount = 0;
     if (argc <= 1) {
-        printf(" %d  %d %d\n", lineCount, wordCount, charCount);
+        printf("%d %d %d\n", lineCount, wordCount, charCount);
         return 0;
     }    
     
@@ -31,6 +31,6 @@ int main (int argc, char* argv[]) {
     // close the file
     fclose(inputFilePointer);
     // output the results
-    printf(" %d  %d %d %s\n", lineCount, wordCount, charCount, fileName); 
+    printf("%d %d %d %s\n", lineCount, wordCount, charCount, fileName); 
     return 0;
 }
