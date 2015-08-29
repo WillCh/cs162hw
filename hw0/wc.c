@@ -9,9 +9,13 @@ int main (int argc, char* argv[]) {
         printf("%d %d %d\n", lineCount, wordCount, charCount);
         return 0;
     }    
-    
-    char *fileName = argv[1];
-    FILE *inputFilePointer = fopen(fileName, "r");
+	char *fileName;
+	if (argc == 2) {    
+		fileName = argv[1];
+    } else if (argc > 2) {
+		fileName = argv[2];
+	}
+	FILE *inputFilePointer = fopen(fileName, "r");
     if (inputFilePointer == NULL) {
         fprintf(stderr, "Can't open input file!\n");
     }
@@ -23,7 +27,7 @@ int main (int argc, char* argv[]) {
             wordCount++;
         }
         // handle the line change
-        if (ch == '\n') {
+        if (ch == '\n' || ch == '\r') {
             lineCount++;     
         }
         prevCh = ch;
