@@ -12,31 +12,23 @@ int main (int argc, char* argv[]) {
 			charCount++;
             if (prevCh == ' ' && ch != ' ') {
 				wordCount++;
-             }
-		// handle the line change
-		if (ch == '\n' || ch == '\r') {
-			lineCount++;
-        }
+            }
+			// handle the line change
+			if (ch == '\n' || ch == '\r') {
+				lineCount++;
+			}
 			prevCh = ch;
-        }
-        // output the results
-        printf("%d %d %d\n", lineCount, wordCount, charCount);
+		}
+		// output the results
+		printf("%d %d %d\n", lineCount, wordCount, charCount);
         return 0;
-    }
-	// for debug
-	printf("there are %d params \n", argc);
-	// these params are：
-	for (int i = 0; i < argc; i++) {
-		printf("%s\n", argv[i]);
-	}    
+    }    
 	char *fileName;
 	if (argc == 2) {    
 		fileName = argv[1];
     } else if (argc > 2) {
 		fileName = argv[2];
 	}
-	// for debug
-	printf("the file name is %s\n", fileName);
 	FILE *inputFilePointer = fopen(fileName, "r");
     if (inputFilePointer == NULL) {
         fprintf(stderr, "Can't open input file!\n");
