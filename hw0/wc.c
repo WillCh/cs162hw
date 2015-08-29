@@ -10,7 +10,7 @@ int main (int argc, char* argv[]) {
 		char ch;
 		char prevCh = ' ';
 		while ((ch = getchar()) != EOF) {
-			charCount++;
+			if (ch) charCount++;
             if (isspace(prevCh) && !isspace(ch)) {
 				wordCount++;
             }
@@ -37,7 +37,7 @@ int main (int argc, char* argv[]) {
     char ch;
     char prevCh = ' ';
     while ((ch = fgetc(inputFilePointer)) != EOF) {
-        charCount++;
+        if (ch) charCount++;
         if (isspace(prevCh) && !isspace(ch)) {
             wordCount++;
         }
