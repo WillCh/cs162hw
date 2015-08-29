@@ -11,7 +11,8 @@ int main (int argc, char* argv[]) {
 		char prevCh = ' ';
 		while ((ch = getchar()) != EOF) {
 			charCount++;
-            if ((isspace(prevCh) || prevCh == 0) && !(isspace(ch) || ch == 0)) {
+			if (!ch) continue;
+            if (isspace(prevCh) && !isspace(ch)) {
 				wordCount++;
             }
 			// handle the line change
@@ -38,7 +39,8 @@ int main (int argc, char* argv[]) {
     char prevCh = ' ';
     while ((ch = fgetc(inputFilePointer)) != EOF) {
 		charCount++;
-        if ((isspace(prevCh) || prevCh == 0) && !(isspace(ch) || ch == 0)) {
+		if (!ch) continue;
+        if (isspace(prevCh) && !isspace(ch)) {
             wordCount++;
         }
         // handle the line change
