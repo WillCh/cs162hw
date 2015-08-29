@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <ctype.h>
 
 int main (int argc, char* argv[]) {
     // 
@@ -10,7 +11,7 @@ int main (int argc, char* argv[]) {
 		char prevCh = ' ';
 		while ((ch = getchar()) != EOF) {
 			charCount++;
-            if (prevCh == ' ' && ch != ' ') {
+            if (isspace(prevCh) && !isspace(ch)) {
 				wordCount++;
             }
 			// handle the line change
@@ -37,12 +38,14 @@ int main (int argc, char* argv[]) {
     char prevCh = ' ';
     while ((ch = fgetc(inputFilePointer)) != EOF) {
         charCount++;
-        if (prevCh == ' ' && ch != ' ') {
+        if (isspace(prevCh) && !isspace(ch)) {
             wordCount++;
         }
         // handle the line change
         if (ch == '\n' || ch == '\r') {
-            lineCount++;     
+            lineCount++;
+			prevCh = ' ';
+			continue;    
         }
         prevCh = ch;
     }
