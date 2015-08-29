@@ -15,7 +15,7 @@ int main (int argc, char* argv[]) {
 				wordCount++;
             }
 			// handle the line change
-			if (ch == '\n' || ch == '\r') {
+			if (ch == '\n') {
 				lineCount++;
 			}
 			prevCh = ch;
@@ -42,7 +42,7 @@ int main (int argc, char* argv[]) {
             wordCount++;
         }
         // handle the line change
-        if (ch == '\n' || ch == '\r') {
+        if (ch == '\n') {
             lineCount++;
 			prevCh = ' ';
 			continue;    
