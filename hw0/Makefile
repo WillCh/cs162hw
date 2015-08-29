@@ -1,7 +1,7 @@
 # Makefile for the hw0
 # write by Haoyu Chen
 CC=gcc
-CFLAGS=-c -g
+CFLAGS=-c -g --std=c99 
 
 all: wc main map
 
