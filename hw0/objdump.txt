@@ -1,3 +1,7 @@
 file format is elf64-x86-64; the architecture: i386:x86-64
 
-The name of 
+The names of segments are like: .note.ABI-tag, .dynsym, .init, .plt, and .text.
+
+The segment which has main is: .text. The address of the main is 40074d
+
+There is no stack or heap segement, because objdump only reveals the information at the compilation. 

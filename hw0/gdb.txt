@@ -1,7 +1,11 @@
 its value is **char, which is 0x7fffffffe5c8;
+
 The executing file is pointed to by argv, which is /home/vagrant/code/personal/hw0/wc;
-The address of main is 0x40069d;
+
+The address of main is 0x40074d;
+
 The info stack shows the stack of existing program, in this example, there is only one stack in the program, which is main function;
-The info frame shows the infomation summary of the frame of exisiting program. stack level 0 shows the frame num in backtrace. frame at 0x7fffffffe4f0 shows the starting memory address of the stack frame. rip is the register that store the address the next instruction will execute. saved rip = 0x7ffff7a36ec5 is the return address. Arglist at 0x7fffffffe4e0 is the start address of the arguments. args includes the input information, like argc=2 and the address of the argv. Locals at 0x7fffffffe4e0 is the address of local variables. Previous frame's sp is the address where the previous frame's stack pointer point to. saved registers are two addresses on the callee stack, rbp is the starting address of the stack frame, and rip is the current instruction address;
+
+The info frame shows the infomation summary of the frame of exisiting program. stack level 0 shows the frame num in backtrace. frame at 0x7fffffffe5c8 shows the starting memory address of the stack frame. rip is the register that store the address the next instruction will execute. saved rip = 0x7ffff7a36ec5 is the return address. Arglist at 0x7fffffffe4e0 is the start address of the arguments. args includes the input information, like argc=2 and the address of the argv. Locals at 0x7fffffffe4e0 is the address of local variables. Previous frame's sp is the address where the previous frame's stack pointer point to. saved registers are two addresses on the callee stack, rbp is the starting address of the stack frame, and rip is the current instruction address;
 
 The info register shows the register values for the program. In the program I use the char ch to store the current char I read in. rax and rdx stores this char.

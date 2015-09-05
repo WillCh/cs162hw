@@ -40,8 +40,8 @@ int main(int argc, char *argv[]) {
     /* TODO 3: Fix to get address of a static variable */
     printf("static data: %p\n", &stuff);
 
-    printf("Heap: malloc 1: %p\n", &buf1);
-    printf("Heap: malloc 2: %p\n", &buf2);
+    printf("Heap: malloc 1: %p\n", buf1);
+    printf("Heap: malloc 2: %p\n", buf2);
     recur(3);
     return 0;
 }

@@ -1,0 +1,11 @@
+The address of main (0x4005c2) is in .text, address of recur (0x40057d) is in .text as well.
+
+The important sections are .plt (which includes the malloc), .text which includes the instructions, and .dynamic.
+
+The stack goes to the direction 0x0, (if we set 0x0 as the top, then stack goes up).
+
+The size of stack frame for each recursion is 48B.
+
+The heap goes to the direction FxF, (if we set 0x0 as the top, then heap goes down).
+
+The space malloc is not contiguous, the space between head of two buffer is 112B, not 100B.
