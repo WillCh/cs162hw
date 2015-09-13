@@ -120,7 +120,7 @@ int shell(int argc, char *argv[]) {
   tok_t *tokens;
   int line_num = 0;
   int fundex = -1;
-
+  int status;
   init_shell();
 
   if (shell_is_interactive)
@@ -134,7 +134,20 @@ int shell(int argc, char *argv[]) {
       cmd_table[fundex].fun(&tokens[1]);
     } else {
       /* REPLACE this to run commands as programs. */
-      fprintf(stdout, "This shell doesn't know how to run programs.\n");
+      pid_t cpid = fork();
+      if (cpid == 0) {
+        // in the child branch
+        execv(tokens[0], &tokens[0]);
+      } else if (cpid > 0) {
+        // in parents branch
+        waitpid(cpid, &status, 0);
+      } else {
+        // for failed
+        perror("Fork failed");
+        exit(1);
+      }
+       
+      // fprintf(stdout, "This shell doesn't know how to run programs.\n");
     }
 
     if (shell_is_interactive)
