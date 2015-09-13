@@ -29,6 +29,8 @@ pid_t shell_pgid;
 
 int cmd_quit(tok_t arg[]);
 int cmd_help(tok_t arg[]);
+int cmd_pwd(tok_t arg[]);
+int cmd_cd(tok_t arg[]);
 
 /* Built-in command functions take token array (see parse.h) and return int */
 typedef int cmd_fun_t(tok_t args[]);
@@ -43,6 +45,8 @@ typedef struct fun_desc {
 fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_quit, "quit", "quit the command shell"},
+  {cmd_pwd, "pwd", "show the current working directory"},
+  {cmd_cd, "cd", "change the current directory to the specific one"},
 };
 
 /**
@@ -63,6 +67,20 @@ int cmd_quit(tok_t arg[]) {
   return 1;
 }
 
+int cmd_pwd(tok_t arg[]) {
+  char cwd[1024];
+  if (getcwd(cwd, 1024) != NULL) {
+    printf("%s\n", cwd);
+  }
+  return 1;
+}
+
+int cmd_cd(tok_t arg[]) {
+
+  chdir(arg[0]);
+  return 1;
+}
+
 /**
  * Looks up the built-in command, if it exists.
  */
@@ -79,6 +97,8 @@ int lookup(char cmd[]) {
 void init_shell() {
   /* Check if we are running interactively */
   shell_terminal = STDIN_FILENO;
+
+  // isatty() test whether a STDIN_FILENO is an open terminal
   shell_is_interactive = isatty(shell_terminal);
 
   if(shell_is_interactive){
