@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <termios.h>
@@ -92,6 +93,73 @@ int lookup(char cmd[]) {
 }
 
 /**
+ * Check the file exisit and executable
+ */
+
+bool isExecutable(char *path) {
+  struct stat stat_buf;
+  return (stat(path, &stat_buf) == 0 && stat_buf.st_mode & S_IXUSR);
+}
+
+char* concat(char *s1, char *s2);
+char* copychar(char* s);
+/**
+ * Get the environment tokens combined with
+ * the 1st input in the command line.
+ * retrun the pointer to the tokens
+ **/
+
+tok_t *get_multiplePath(char *filePath) {
+  char *name = "PATH";
+  char *val;
+  val = getenv(name);
+  // parse the env
+  tok_t *tokens = get_toks(val);
+  // need to manufact the tokens to add the tok_t's val
+  // since we have more tokens and the re-paste the contents
+  // a new space is alloc
+  tok_t *res = malloc(MAXTOKS * sizeof(tok_t));
+  // for the 1st one just copy the tok_t to the new results
+  res[0] = (tok_t)copychar(filePath); 
+  tok_t *iter = tokens;
+  int i = 1;
+  while ((*iter) != NULL) {
+    res[i] = (tok_t)concat(tokens[i - 1], filePath);
+    i++;
+    iter++;
+  }
+  return res;
+}
+
+void freeMulPath(tok_t *path) {
+  tok_t *iter = path;
+  while ((*iter) != NULL) {
+    free(*iter);
+    iter++;
+  }
+  free(path);
+}
+
+char* concat(char *s1, char *s2) {
+  char *result = (char*)malloc(strlen(s1) + strlen(s2) + 2);
+  //+1 for the zero-terminator
+  //in real code you would check for errors in malloc here
+  strcpy(result, s1);
+  int len = strlen(result);
+  result[len] = '/';
+  result[len + 1] = 0;
+  strcat(result, s2);
+  return result;
+}
+
+char* copychar(char *s) {
+  char *res = (char*)malloc(strlen(s) + 1);
+  strcpy(res, s);
+  return res;
+}
+
+
+/**
  * Intialization procedures for this shell
  */
 void init_shell() {
@@ -122,7 +190,6 @@ int shell(int argc, char *argv[]) {
   int fundex = -1;
   int status;
   init_shell();
-
   if (shell_is_interactive)
     /* Please only print shell prompts when standard input is not a tty */
     fprintf(stdout, "%d: ", line_num);
@@ -137,7 +204,20 @@ int shell(int argc, char *argv[]) {
       pid_t cpid = fork();
       if (cpid == 0) {
         // in the child branch
-        execv(tokens[0], &tokens[0]);
+        // read the env variable
+        tok_t *filepath = get_multiplePath(tokens[0]);
+        // check from the 1st one to see whether we 
+        // find a executable command
+        tok_t *iter = filepath;
+        while ((*iter) != NULL) {
+          if (isExecutable(*iter)) {
+            execv(*iter, &tokens[0]);
+          }
+          iter++;
+        }
+        perror("Command line not found\n");
+        exit(1);
+        // execv(tokens[0], &tokens[0]);
       } else if (cpid > 0) {
         // in parents branch
         waitpid(cpid, &status, 0);
@@ -149,6 +229,9 @@ int shell(int argc, char *argv[]) {
        
       // fprintf(stdout, "This shell doesn't know how to run programs.\n");
     }
+    // clean the garbage
+    free_toks(tokens);
+    freeln(input_bytes);
 
     if (shell_is_interactive)
       /* Please only print shell prompts when standard input is not a tty */
