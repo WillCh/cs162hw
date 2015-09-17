@@ -10,6 +10,7 @@
 #include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "io.h"
 #include "parse.h"
@@ -158,6 +159,33 @@ char* copychar(char *s) {
   return res;
 }
 
+/**
+ * Function to detect whether there is '>'
+ * If we have '>', we copy the next token, and free it
+ **/
+
+bool isThereFileDirection(tok_t *input, char *sign, char **fileDes) {
+  tok_t *head = input;
+  while ((*head) != NULL) {
+    if (strcmp(*head, sign) == 0) {
+      // find sign
+      // change the head to NULL
+      // printf("find sign\n");
+      *head = NULL;
+      head++;
+      *fileDes = *head;
+      // printf("file des is %s\n", fileDes);
+      while ((*head) != NULL) {
+        *head = NULL;
+        head++;
+      }
+      return true;
+    }
+    head++;
+  }
+  return false;
+}
+
 
 /**
  * Intialization procedures for this shell
@@ -197,7 +225,39 @@ int shell(int argc, char *argv[]) {
   while ((input_bytes = freadln(stdin))) {
     tokens = get_toks(input_bytes);
     fundex = lookup(tokens[0]);
+    // check whether there are '>'
+    char *fileDes = NULL;
+    char *signOutput = ">";
+    char *signInput = "<";
+    int out = -1;
+    int in = -1;
+    int stdout_save = -1;
+    int stdin_save = -1;
+    bool changeOut = false;
+    bool changeIn = false;
+    if (isThereFileDirection(tokens, signOutput, &fileDes)) {
+      // int filedesc = open(fileDes, O_WRONLY|O_CREAT|O_TRUNC);
+      out = open(fileDes, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
+      if (out < 0) printf("Fail to open the file\n");
+      // dup the stdout
+      stdout_save = dup(STDOUT_FILENO);
+      dup2(out, STDOUT_FILENO);
+      close(out);
+      changeOut = true;
+      // printf("output found: %s \n", fileDes); 
+    }
+    if (isThereFileDirection(tokens, signInput, &fileDes)) {
+      in = open(fileDes, O_RDONLY);
+      if (in < 0) printf("Fail to open the file for input\n");
+      // dup the stdin
+      stdin_save = dup(STDIN_FILENO);
+      dup2(in, STDIN_FILENO);
+      close(in);
+      changeIn = true;
+    }
+    // printf("finished test\n");
     if (fundex >= 0) {
+      // printf("no fork\n");
       cmd_table[fundex].fun(&tokens[1]);
     } else {
       /* REPLACE this to run commands as programs. */
@@ -226,8 +286,15 @@ int shell(int argc, char *argv[]) {
         perror("Fork failed");
         exit(1);
       }
-       
-      // fprintf(stdout, "This shell doesn't know how to run programs.\n");
+    }
+    // change back to the stdout
+    if (changeOut) {
+      dup2(stdout_save, STDOUT_FILENO);
+      close(stdout_save);
+    }
+    if (changeIn) {
+      dup2(stdin_save, STDIN_FILENO);
+      close(stdin_save);
     }
     // clean the garbage
     free_toks(tokens);
