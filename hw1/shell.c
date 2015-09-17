@@ -255,15 +255,13 @@ int shell(int argc, char *argv[]) {
       close(in);
       changeIn = true;
     }
-    // printf("finished test\n");
-    if (fundex >= 0) {
-      // printf("no fork\n");
-      cmd_table[fundex].fun(&tokens[1]);
-    } else {
-      /* REPLACE this to run commands as programs. */
-      pid_t cpid = fork();
-      if (cpid == 0) {
-        // in the child branch
+
+    pid_t cpid = fork();
+    if (cpid == 0) {
+      if (fundex >= 0) {
+        cmd_table[fundex].fun(&tokens[1]);
+        exit(0);
+      } else {
         // read the env variable
         tok_t *filepath = get_multiplePath(tokens[0]);
         // check from the 1st one to see whether we 
@@ -277,15 +275,12 @@ int shell(int argc, char *argv[]) {
         }
         perror("Command line not found\n");
         exit(1);
-        // execv(tokens[0], &tokens[0]);
-      } else if (cpid > 0) {
-        // in parents branch
-        waitpid(cpid, &status, 0);
-      } else {
-        // for failed
-        perror("Fork failed");
-        exit(1);
       }
+    } else if (cpid > 0) {
+      waitpid(cpid, &status, 0);
+    } else {
+      perror("Fork failed\n");
+      exit(1);
     }
     // change back to the stdout
     if (changeOut) {

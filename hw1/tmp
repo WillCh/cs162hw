@@ -1,0 +1,17 @@
+io.c
+io.h
+io.o
+main.c
+main.o
+Makefile
+parse.c
+parse.h
+parse.o
+process.c
+process.h
+process.o
+shell
+shell.c
+shell.h
+shell.o
+tmp
