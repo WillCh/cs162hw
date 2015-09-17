@@ -256,12 +256,11 @@ int shell(int argc, char *argv[]) {
       changeIn = true;
     }
 
-    pid_t cpid = fork();
-    if (cpid == 0) {
-      if (fundex >= 0) {
-        cmd_table[fundex].fun(&tokens[1]);
-        exit(0);
-      } else {
+    if (fundex >= 0) {
+      cmd_table[fundex].fun(&tokens[1]);
+    } else {
+      pid_t cpid = fork();
+      if (cpid == 0) {
         // read the env variable
         tok_t *filepath = get_multiplePath(tokens[0]);
         // check from the 1st one to see whether we 
@@ -275,12 +274,12 @@ int shell(int argc, char *argv[]) {
         }
         perror("Command line not found\n");
         exit(1);
+      } else if (cpid > 0) {
+        waitpid(cpid, &status, 0);
+      } else {
+        perror("Fork failed\n");
+        exit(1);
       }
-    } else if (cpid > 0) {
-      waitpid(cpid, &status, 0);
-    } else {
-      perror("Fork failed\n");
-      exit(1);
     }
     // change back to the stdout
     if (changeOut) {
