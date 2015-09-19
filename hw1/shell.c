@@ -17,6 +17,11 @@
 #include "process.h"
 #include "shell.h"
 
+// array of pid for recording the runing background process
+// 
+pid_t pid_in_wait_array[1024];
+int len_pid_queue = 0; 
+int status;
 /* Whether the shell is connected to an actual terminal or not. */
 bool shell_is_interactive;
 
@@ -33,6 +38,7 @@ int cmd_quit(tok_t arg[]);
 int cmd_help(tok_t arg[]);
 int cmd_pwd(tok_t arg[]);
 int cmd_cd(tok_t arg[]);
+int cmd_wait(tok_t arg[]);
 
 /* Built-in command functions take token array (see parse.h) and return int */
 typedef int cmd_fun_t(tok_t args[]);
@@ -49,7 +55,20 @@ fun_desc_t cmd_table[] = {
   {cmd_quit, "quit", "quit the command shell"},
   {cmd_pwd, "pwd", "show the current working directory"},
   {cmd_cd, "cd", "change the current directory to the specific one"},
+  {cmd_wait, "wait", "wait for all background processes to finish"},
 };
+
+// func of wait which wait for all the pids in the queue
+
+int cmd_wait(tok_t arg[]) {
+  for (int i = 0; i < len_pid_queue; i++) {
+    waitpid(pid_in_wait_array[i], &status, 0);
+  }
+  // set the len to be zero
+  len_pid_queue = 0;
+  return 1;
+}
+
 
 /**
  * Prints a helpful description for the given command
@@ -186,6 +205,21 @@ bool isThereFileDirection(tok_t *input, char *sign, char **fileDes) {
   return false;
 }
 
+/** Function to detect whether there is a % in the end of cmd
+  * If so, delete the %, and return true; ow, return false
+  **/
+
+bool isBackGround(tok_t *input) {
+  tok_t *head = input;
+  while ((*head) != NULL) {
+    if (strcmp(*head, "&") == 0) {
+      *head = NULL;
+      return true;
+    }
+    head++;
+  }
+  return false;
+}
 
 /**
  * Intialization procedures for this shell
@@ -235,6 +269,7 @@ int shell(int argc, char *argv[]) {
     int stdin_save = -1;
     bool changeOut = false;
     bool changeIn = false;
+    bool isBack = false;
     if (isThereFileDirection(tokens, signOutput, &fileDes)) {
       // int filedesc = open(fileDes, O_WRONLY|O_CREAT|O_TRUNC);
       out = open(fileDes, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
@@ -255,7 +290,7 @@ int shell(int argc, char *argv[]) {
       close(in);
       changeIn = true;
     }
-    
+    isBack = isBackGround(tokens);
     if (fundex >= 0) {
       cmd_table[fundex].fun(&tokens[1]);
     } else {
@@ -291,8 +326,14 @@ int shell(int argc, char *argv[]) {
         signal(SIGTERM, SIG_IGN);
         signal(SIGTSTP, SIG_IGN);
         signal(SIGTTIN, SIG_IGN);
-        signal(SIGTTOU, SIG_IGN);        
-        waitpid(cpid, &status, 0);
+        signal(SIGTTOU, SIG_IGN); 
+        if (!isBack) {       
+          waitpid(cpid, &status, 0);
+        } else  {
+          // put the process id into the back ground queue
+          pid_in_wait_array[len_pid_queue] = cpid;
+          len_pid_queue++;
+        }
         // tcsetpgrp(shell_terminal, getpgid(shell_pgid));
       } else {
         perror("Fork failed\n");
