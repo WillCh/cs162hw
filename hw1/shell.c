@@ -255,12 +255,20 @@ int shell(int argc, char *argv[]) {
       close(in);
       changeIn = true;
     }
-
+    
     if (fundex >= 0) {
       cmd_table[fundex].fun(&tokens[1]);
     } else {
       pid_t cpid = fork();
       if (cpid == 0) {
+        // not to ignore the signal
+        signal(SIGINT, SIG_DFL);
+        signal(SIGQUIT, SIG_DFL);
+        signal(SIGKILL, SIG_DFL);
+        signal(SIGTERM, SIG_DFL);
+        signal(SIGTSTP, SIG_DFL);
+        signal(SIGTTIN, SIG_DFL);
+        signal(SIGTTOU, SIG_DFL); 
         // read the env variable
         tok_t *filepath = get_multiplePath(tokens[0]);
         // check from the 1st one to see whether we 
@@ -275,7 +283,17 @@ int shell(int argc, char *argv[]) {
         perror("Command line not found\n");
         exit(1);
       } else if (cpid > 0) {
+        
+        // ignore the signal
+        signal(SIGINT, SIG_IGN);
+        signal(SIGQUIT, SIG_IGN);
+        signal(SIGKILL, SIG_IGN);
+        signal(SIGTERM, SIG_IGN);
+        signal(SIGTSTP, SIG_IGN);
+        signal(SIGTTIN, SIG_IGN);
+        signal(SIGTTOU, SIG_IGN);        
         waitpid(cpid, &status, 0);
+        // tcsetpgrp(shell_terminal, getpgid(shell_pgid));
       } else {
         perror("Fork failed\n");
         exit(1);
