@@ -1,0 +1,161 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <title>projects</title>
+  <meta name="description" content="website description" />
+  <meta name="keywords" content="website keywords, website keywords" />
+  <meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+  <link rel="stylesheet" type="text/css" href="style/style.css" />
+</head>
+
+<body>
+  <div id="main">
+    <div id="header">
+      <div id="logo">
+        <div id="logo_text">
+          <!-- class="logo_colour", allows you to change the colour of the text -->
+          <h1><a href="index.html">Haoyu Chen<span class="logo_colour"> Personal Page</span></a></h1>
+          <h2>Machine Learning. Parallel Computing. Statistics.</h2>
+        </div>
+      </div>
+      <div id="menubar">
+        <ul id="menu">
+          <!-- put class="selected" in the li tag for the selected page - to highlight which page you're on -->
+          <li><a href="index.html">Home</a></li>
+          <li><a href="biography.html">Biography</a></li>
+          <li class="selected"><a href="projects.html">Projects</a></li>
+          <li><a href="research.html">Research</a></li>
+          <li><a href="contact.html">Contact Me</a></li>
+        </ul>
+      </div>
+    </div>
+    <div id="content_header"></div>
+    <div id="site_content">
+      <!--
+      <div id="sidebar_container">
+        <div class="sidebar">
+          <div class="sidebar_top"></div>
+          <div class="sidebar_item">
+          -->
+            <!-- insert your sidebar items here -->
+            <!--
+            <h3>Latest News</h3>
+            <h4>New Website Launched</h4>
+            <h5>January 1st, 2010</h5>
+            <p>2010 sees the redesign of our website. Take a look around and let us know what you think.<br /><a href="#">Read more</a></p>
+          </div>
+          <div class="sidebar_base"></div>
+        </div>
+        <div class="sidebar">
+          <div class="sidebar_top"></div>
+          <div class="sidebar_item">
+            <h3>Useful Links</h3>
+            <ul>
+              <li><a href="#">link 1</a></li>
+              <li><a href="#">link 2</a></li>
+              <li><a href="#">link 3</a></li>
+              <li><a href="#">link 4</a></li>
+            </ul>
+          </div>
+          <div class="sidebar_base"></div>
+        </div>
+        <div class="sidebar">
+          <div class="sidebar_top"></div>
+          <div class="sidebar_item">
+            <h3>Search</h3>
+            <form method="post" action="#" id="search_form">
+              <p>
+                <input class="search" type="text" name="search_field" value="Enter keywords....." />
+                <input name="search" type="image" style="border: 0; margin: 0 0 -9px 5px;" src="style/search.png" alt="Search" title="Search" />
+              </p>
+            </form>
+          </div>
+          <div class="sidebar_base"></div>
+        </div>
+      </div>
+      <div id="content">
+      -->
+        <!-- insert the page content here -->
+        <h1>Projects</h1>
+        <p>This page records part of my class projects. It is unfinished yet, more projects details will be added soon. Right now, I separate the projects into: </p>
+        <ul>
+          <li><a href = "#C1">Parallel Computing</a></li>
+          <li><a href = "#C2">General Machine Learning</a></li>
+          <li><a href = "#C3">Nature Language Process (NLP)</a></li>
+          <li><a href = "#C4">Image Computing</a></li>
+          <li><a href = "#C5">Statistic Data Analysis</a></li>
+          <li><a href = "#C6">Othes</a></li>
+        </ul>
+
+        <h2><a name = "C1">Parallel Computing </a></h2>
+        <h3>Accelerate GPU Convolutional Neural Network (CNN, one deep learning strategy) with Auto-tuning</h3>
+
+        <p>Convolutional Neural Network (CNN) is a powerful tool in machine learning area, it can handle the problems in image classification and signal process. However, it requires a large mount of the traning time for this system. Thus, there are tons of efforts to speedup the traning process. Because of the property of convolutional calculation, GPU acceleration is applied to speedup the CNN. However, in the different layers, the size of input images varies largely, which decreases the efficiency of the convolution. </p>
+
+        <p> In this project, we concatenate multiple input images into one batch. Thus, we create larger matrix per cuBlas call. In order to do the auto-tuning, we create an extra-parameter v, which represents the new size of images. Auto-tuning v for peak performance in different layers can optimize the system for different computer. We speedup the Caffe (Berkeley CNN framework, the fastest open source one as we know) 1.5-2 times. </p>
+        
+        <h3>Accelerate image blur and scan</h3>
+        <p> Implement high-performance and memory-efficient image blur using SSE intrinsics, OpenMP, loop unrolling, register blocking, and cache blocking by C. Implemented reduce and efficient scan with GPU speedup by openCL.  </p>
+        
+
+        <h2><a name = "C2">General Machine Learning </a></h2>
+        <h3> Bayesian Network Model to predict the highway network's performance </h3>
+        <h3> More ...</h3>
+        
+
+        <h2><a name = "C3">Nature Language Process (NLP) </a></h2>
+        <h3>Probabilistic Parsing</h3>
+        <p> details will be added soon </p>
+
+        <h3> Speech Recognition </h3>
+        <p> details will be added soon </p>
+        
+        <h3> Word Alignment </h3>
+        <p> details will be added soon </p>
+
+       
+        <h2><a name = "C4">Image Computing </a></h2>
+        <h3>Drawing Process Reconstruction from Single Image</h3>
+        <p> details will be added soon </p>
+       
+        <h3>Gradient Domain Fusion</h3>
+        <p> details will be added soon </p>
+        
+        <h3>Stitching Photo Mosaics</h3>
+        <p> details will be added soon </p>
+
+
+        <h2><a name = "C5">Statistic Data Analysis </a></h2>
+        <h3>Brain Responses to Visual Images</h3>
+        <p> details will be added soon </p>
+
+        <h3>Predict the Traffic State for Bay Bridge</h3>
+        <p> details will be added soon </p>
+
+        
+        <h3>Cloud Detection </h3>
+        <p> details will be added soon </p>
+
+
+        <h2><a name = "C6">Othes </a></h2>
+        <h3>Compiler</h3>
+        <p> details will be added soon </p>
+
+        <h3>Design of CPU</h3>
+        <p> details will be added soon </p>
+        
+        <h3>Chips Game</h3>        
+        <p> details will be added soon </p>
+        
+      </div>
+    </div>
+    <div id="content_footer"></div>
+     <div id="footer">
+      <p><a href="index.html">Home</a> | <a href="biography.html">Biography</a> | <a href="projects.html">Projects</a> | <a href="research.html">Research</a> | <a href="contact.html">Contact Me</a></p>
+      <!--<p>Copyright &copy; simplestyle_4 | <a href="http://validator.w3.org/check?uri=referer">HTML5</a> | <a href="http://jigsaw.w3.org/css-validator/check/referer">CSS</a> | <a href="http://www.html5webtemplates.co.uk">design from HTML5webtemplates.co.uk</a></p>
+      -->
+    </div>
+  </div>
+</body>
+</html>
