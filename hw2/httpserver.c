@@ -61,7 +61,7 @@ void concate(char *server_path, char *client_path, char *newPath) {
 // return -1 does not exisits
 // return 0 is a file
 // return 1 is a dir
-int is_a_dir (char *path) {
+int is_a_dir (char *path, int *file_size) {
   struct stat fileStat;
   int res = stat(path, &fileStat);
   if (res == -1) {
@@ -71,16 +71,17 @@ int is_a_dir (char *path) {
     return 1;
   } 
   if (S_ISREG(fileStat.st_mode)) {
+    *file_size = fileStat.st_size;
     return 0;
   } 
   return -1;
 }
-bool has_a_index (char *path) {
+bool has_a_index (char *path, int *file_size) {
   char newPath[strlen(path) + 12 + 1];
   memset(newPath, '\0', sizeof(newPath));
   char *tmp = "/index.html";
   concate(path, tmp, newPath);
-  int id = is_a_dir(newPath);
+  int id = is_a_dir(newPath, file_size);
   if (id == 0) {
     return true;
   }
@@ -160,21 +161,28 @@ void handle_files_request(int fd) {
 
   concate(server_files_directory, request->path, newPath);
   if (strcmp(request->method, "GET") == 0) {
-    int id = is_a_dir(newPath);
+    int file_size = 0;
+    int id = is_a_dir(newPath, &file_size);
     if (id == 0) {
       // has an exisitng file
+      char file_size_tmp[288];
+      sprintf(file_size_tmp, "%d", file_size);
       http_start_response(fd, 200);
       http_send_header(fd, "Content-type", http_get_mime_type(newPath));
+      http_send_header(fd, "Content-length", file_size_tmp);
       http_end_headers(fd);
       read_from_a_file_print(newPath, fd);
     } else if (id == 1) {
-      if (has_a_index(newPath)) {
+      if (has_a_index(newPath, &file_size)) {
         // sent the html
+        char file_size_tmp[288];
+        sprintf(file_size_tmp, "%d", file_size);
         char updatedPath[strlen(newPath) + 12 + 4];
         char *tmp = "/index.html";
         concate(newPath, tmp, updatedPath);
         http_start_response(fd, 200);
         http_send_header(fd, "Content-type", http_get_mime_type(updatedPath));
+        http_send_header(fd, "Content-length", file_size_tmp);
         http_end_headers(fd);
         read_from_a_file_print(updatedPath, fd);
       } else {
