@@ -274,7 +274,7 @@ void handle_proxy_request(int fd) {
       nbytes = sizeof(buf);
       bytes_read = read(socket_num, buf, nbytes);
       if (bytes_read > 0) {
-        bytes_write = write(fd, buf, sizeof(buf));
+        bytes_write = write(fd, buf, bytes_read);
         if (bytes_write < 0) break;
       } else {
         break;
