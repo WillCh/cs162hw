@@ -209,6 +209,7 @@ void handle_files_request(int fd) {
   free(newPath);
 }
 
+
 /*
  * Opens a connection to the proxy target (hostname=server_proxy_hostname and
  * port=server_proxy_port) and relays traffic to/from the stream fd and the
@@ -223,7 +224,88 @@ void handle_files_request(int fd) {
 void handle_proxy_request(int fd) {
 
   /* YOUR CODE HERE */
+  struct hostent *hostentRes = gethostbyname(server_proxy_hostname);
+  if (hostentRes == NULL) {
+    perror("No such host");
+    exit(errno);
+  }
+  char *hostIP = hostentRes->h_addr;
+  printf("the hostIP is %s\n", hostIP);
 
+  // create a socket
+  int socket_num = socket(AF_INET, SOCK_STREAM, 0);
+  if (socket_num == -1) {
+    perror("Failed to create a new socket");
+    exit(errno);
+  }
+
+  // re-set the socket
+   // reset the socket
+  int socket_option = 1;
+  if (setsockopt(socket_num, SOL_SOCKET, SO_REUSEADDR, &socket_option,
+        sizeof(socket_option)) == -1) {
+    perror("Failed to set socket options");
+    exit(errno);
+  }
+
+  // set the socket address
+  struct sockaddr_in server_ad;
+  memset (&server_ad, 0, sizeof(server_ad));
+  server_ad.sin_family= AF_INET;
+  //(server_ad.sin_addr.s_addr) = hostIP;
+  bcopy((char *)hostentRes->h_addr, 
+         (char *)&server_ad.sin_addr.s_addr,
+         hostentRes->h_length);
+  server_ad.sin_port = htons(server_proxy_port);
+
+  if (connect (socket_num, (struct sockaddr *)&server_ad, sizeof(server_ad)) < 0) {
+    perror ("fail to connect to the des");
+    exit(errno);
+  }
+
+  pid_t pid = fork();
+  if (pid == 0) {
+    // child, socket_num -> fd
+    char buf[1024];
+    size_t nbytes;
+    int bytes_read;
+    int bytes_write;
+    while (1) {
+      nbytes = sizeof(buf);
+      bytes_read = read(socket_num, buf, nbytes);
+      if (bytes_read > 0) {
+        bytes_write = write(fd, buf, sizeof(buf));
+        if (bytes_write < 0) break;
+      } else {
+        break;
+      }
+    }
+    // close socket_num
+    close(socket_num);
+    return;
+  } else if (pid > 0) {
+    // parents, fd -> socket_num
+    char buf[1024];
+    size_t nbytes;
+    int bytes_read;
+    int bytes_write;
+    while (1) {
+      nbytes = sizeof(buf);
+      bytes_read = read(fd, buf, nbytes);
+      if (bytes_read > 0) {
+        bytes_write = write(socket_num, buf, sizeof(buf));
+        if (bytes_write < 0) break;
+      } else {
+        break;
+      }
+    }
+    // close socket_num
+    close(fd);
+    return;
+  } else {
+      perror("Failed to fork child");
+      exit(errno);
+  }
 }
 
 /*
