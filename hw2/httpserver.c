@@ -229,9 +229,6 @@ void handle_proxy_request(int fd) {
     perror("No such host");
     exit(errno);
   }
-  char *hostIP = hostentRes->h_addr;
-  printf("the hostIP is %s\n", hostIP);
-
   // create a socket
   int socket_num = socket(AF_INET, SOCK_STREAM, 0);
   if (socket_num == -1) {
