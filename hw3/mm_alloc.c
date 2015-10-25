@@ -148,6 +148,13 @@ void *mm_malloc(size_t size) {
 
 void *mm_realloc(void *ptr, size_t size) {
     /* YOUR CODE HERE */
+    if (size == 0) {
+    	mm_free(ptr);
+    	return NULL;
+    }
+    if (ptr == NULL && size > 0) {
+    	return mm_malloc(size);
+    }
     assert (size >= 0);
     if (size == 0) return ptr;
     size_t min_new_size = sizeof(slot) + 4;
