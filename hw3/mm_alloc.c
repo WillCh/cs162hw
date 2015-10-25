@@ -54,16 +54,16 @@ void split_slot(slot *old_slot, size_t size) {
 		}
 		old_slot->size = size;
 		// clean the new data
-		memset(new_slot + sizeof(slot), 0, new_slot->size);
+		memset((char *)new_slot + sizeof(slot), 0, new_slot->size);
 	}
 	// clean the old data
-	memset(old_slot + sizeof(slot), 0, old_slot->size);
+	memset((char *)old_slot + sizeof(slot), 0, old_slot->size);
 }
 
 slot* find_list_elem_data_location(void *data_pnt) {
 	slot *iter = head;
 	while (iter != NULL) {
-		if (iter + sizeof(slot) == data_pnt) {
+		if ((char*)iter + sizeof(slot) == data_pnt) {
 			return iter;
 		}
 		iter = iter->next;
@@ -89,7 +89,7 @@ void merge_free_space(slot* slot_pnt) {
 		}
 	}
 	// set them to be zero
-	memset(slot_pnt + sizeof(slot), 0, slot_pnt->size);
+	memset((char *)slot_pnt + sizeof(slot), 0, slot_pnt->size);
 	// merge to the before slot
 	iter = slot_pnt->prev;
 	slot *tmp_head = slot_pnt;
@@ -105,7 +105,7 @@ void merge_free_space(slot* slot_pnt) {
 		} else {
 			tail = tmp_head;
 		}
-		memset(tmp_head + sizeof(slot), 0, tmp_head->size);
+		memset((char*)tmp_head + sizeof(slot), 0, tmp_head->size);
 	}
 }
 
@@ -120,17 +120,17 @@ void *mm_malloc(size_t size) {
     	// need to check whether need to split the space
     	split_slot(possible_slot, size);
     	possible_slot->isFree = false;
-    	return (possible_slot + sizeof(slot));
+    	return (void *)((char *)possible_slot + sizeof(slot));
     } else {
     	// need to move the brk
     	// First to check the last is able to use or not
     	if (tail->isFree) {
     		slot *add = (slot *) sbrk(size - (tail->size));
     		if (add == -1) return NULL;
-    		memset(tail + sizeof(slot), 0, size);
+    		memset((char *)tail + sizeof(slot), 0, size);
     		tail->size = size;
     		tail->isFree = false;
-    		return (tail + sizeof(slot));
+    		return (void *)((char *)tail + sizeof(slot));
     	} else {
     		slot *new_slot = sbrk(sizeof(slot) + size);
 	    	if (new_slot == -1) return NULL;
@@ -141,7 +141,7 @@ void *mm_malloc(size_t size) {
 	    	new_slot->isFree = false;
 	    	tail->next = new_slot;
 	    	tail = new_slot;
-	    	return (new_slot + sizeof(slot));
+	    	return (void *)((char*)new_slot + sizeof(slot));
     	}
     }
 }
@@ -154,7 +154,7 @@ void *mm_realloc(void *ptr, size_t size) {
     slot *cur_slot = find_list_elem_data_location(ptr);
     if (cur_slot->size >= size + min_new_size) {
     	// we can insert a new slot and use the orgianl space
-    	slot *new_slot = cur_slot + sizeof(slot) + size;
+    	slot *new_slot = (slot *)((char *)cur_slot + sizeof(slot) + size);
     	memset(new_slot, 0, cur_slot->size - size);
     	new_slot->prev = cur_slot;
     	new_slot->next = cur_slot->next;
@@ -171,7 +171,11 @@ void *mm_realloc(void *ptr, size_t size) {
     	return ptr;
     }
     void *new_ptr = mm_malloc(size);
-    memcpy(new_ptr, ptr, cur_slot->size);
+    if (size >= cur_slot->size) {
+    	memcpy(new_ptr, ptr, cur_slot->size);
+    } else {
+    	memcpy(new_ptr, ptr, size);
+    }
     mm_free(ptr);
     return new_ptr;
 }
