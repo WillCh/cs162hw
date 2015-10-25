@@ -49,12 +49,15 @@ void split_slot(slot *old_slot, size_t size) {
 		old_slot->next = new_slot;
 		if (new_slot->next != NULL) {
 			new_slot->next->prev = new_slot;
-		}
-		old_slot->size = size;
-		if (old_slot == tail) {
+		} else {
 			tail = new_slot;
 		}
+		old_slot->size = size;
+		// clean the new data
+		memset(new_slot + sizeof(slot), 0, new_slot->size);
 	}
+	// clean the old data
+	memset(old_slot + sizeof(slot), 0, old_slot->size);
 }
 
 slot* find_list_elem_data_location(void *data_pnt) {
@@ -90,7 +93,7 @@ void merge_free_space(slot* slot_pnt) {
 	// merge to the before slot
 	iter = slot_pnt->prev;
 	slot *tmp_head = slot_pnt;
-	while (iter != NULL && (iter->isFree)) {
+	while (iter != head && (iter->isFree)) {
 		iter->size += iter->next->size + sizeof(slot);
 		tmp_head = iter;
 		iter = iter->prev;
@@ -99,13 +102,11 @@ void merge_free_space(slot* slot_pnt) {
 		tmp_head->next = slot_pnt->next;
 		if (slot_pnt->next != NULL) {
 			slot_pnt->next->prev = tmp_head;
+		} else {
+			tail = tmp_head;
 		}
+		memset(tmp_head + sizeof(slot), 0, tmp_head->size);
 	}
-	if (slot_pnt == tail) {
-		tail = tmp_head;
-	}
-	memset(tmp_head + sizeof(slot), 0, tmp_head->size);
-
 }
 
 void *mm_malloc(size_t size) {
@@ -122,16 +123,26 @@ void *mm_malloc(size_t size) {
     	return (possible_slot + sizeof(slot));
     } else {
     	// need to move the brk
-    	slot *new_slot = sbrk(sizeof(slot) + size);
-    	if (new_slot == -1) return NULL;
-    	memset(new_slot, 0, sizeof(slot) + size);
-    	new_slot->next = NULL;
-    	new_slot->prev = tail;
-    	new_slot->size = size;
-    	new_slot->isFree = false;
-    	tail->next = new_slot;
-    	tail = new_slot;
-    	return (new_slot + sizeof(slot));
+    	// First to check the last is able to use or not
+    	if (tail->isFree) {
+    		slot *add = (slot *) sbrk(size - (tail->size));
+    		if (add == -1) return NULL;
+    		memset(tail + sizeof(slot), 0, size);
+    		tail->size = size;
+    		tail->isFree = false;
+    		return (tail + sizeof(slot));
+    	} else {
+    		slot *new_slot = sbrk(sizeof(slot) + size);
+	    	if (new_slot == -1) return NULL;
+	    	memset(new_slot, 0, sizeof(slot) + size);
+	    	new_slot->next = NULL;
+	    	new_slot->prev = tail;
+	    	new_slot->size = size;
+	    	new_slot->isFree = false;
+	    	tail->next = new_slot;
+	    	tail = new_slot;
+	    	return (new_slot + sizeof(slot));
+    	}
     }
 }
 

@@ -40,5 +40,13 @@ int main(int argc, char **argv) {
     debug_print_list();
     mm_free(data);
     debug_print_list();
+    printf("split test\n");
+    data = (int *) mm_malloc(sizeof(int)*3);
+    data[0] = 1;
+    debug_print_list();
+    print_array(data, 1);
+    int *data2 = (int *) mm_malloc(sizeof(int)*16);
+    print_array(data2, 1);
+    debug_print_list();
     return 0;
 }
