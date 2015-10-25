@@ -169,8 +169,25 @@ void *mm_realloc(void *ptr, size_t size) {
     	}
     	merge_free_space(new_slot);
     	return ptr;
+    } else if (cur_slot == tail) {
+    	// extend the cur_slot..
+    	if (cur_slot->size < size) {
+    		slot *add = (slot *) sbrk(size - (tail->size));
+    		if (add == -1) return NULL;
+    		memset(add, 0, size - (tail->size));
+    		tail->size = size;
+    		tail->isFree = false;
+    		return (void *)((char *)tail + sizeof(slot));
+    	} else {
+    		// shrink the mem
+    		slot *shrink = (slot *) sbrk(size - (tail->size));
+    		if (shrink == -1) return NULL;
+    		tail->size = size;
+    		return (void *)((char *)tail + sizeof(slot));
+    	}
     }
     void *new_ptr = mm_malloc(size);
+    if (new_ptr == NULL) return NULL;
     if (size >= cur_slot->size) {
     	memcpy(new_ptr, ptr, cur_slot->size);
     } else {
