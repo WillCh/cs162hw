@@ -41,7 +41,7 @@ slot* find_list_elem(size_t size) {
 void split_slot(slot *old_slot, size_t size) {
 	size_t min_new_size = sizeof(slot) + 4;
 	if (old_slot->size >= size + min_new_size) {
-		slot *new_slot = (slot*) (old_slot + sizeof(slot) + size);
+		slot *new_slot = (slot*) ((char*) old_slot + sizeof(slot) + size);
 		new_slot->prev = old_slot;
 		new_slot->next = old_slot->next;
 		new_slot->isFree = true;
