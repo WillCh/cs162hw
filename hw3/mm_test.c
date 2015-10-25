@@ -16,6 +16,18 @@ void print_array(int *array, int size) {
 
 int main(int argc, char **argv) {
     int *data;
+    int N = 50;
+    data = (int *) mm_malloc(sizeof(int) * N);
+    int i = 0;
+    for (i = 0; i < N; i++) {
+        data[i] = i;
+    }
+    print_array(data, N);
+    debug_print_list();
+    data = (int *) mm_realloc(data, sizeof(int) * N*2);
+    print_array(data, N*2);
+    debug_print_list();
+    /**
     data = (int *) mm_malloc(4);
     printf("mm_malloc(4)\n");
     debug_print_list();
@@ -47,6 +59,6 @@ int main(int argc, char **argv) {
     print_array(data, 1);
     int *data2 = (int *) mm_malloc(sizeof(int)*16);
     print_array(data2, 1);
-    debug_print_list();
+    debug_print_list(); **/
     return 0;
 }

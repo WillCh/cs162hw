@@ -159,6 +159,7 @@ void *mm_realloc(void *ptr, size_t size) {
     if (size == 0) return ptr;
     size_t min_new_size = sizeof(slot) + 4;
     slot *cur_slot = find_list_elem_data_location(ptr);
+    /**
     if (cur_slot->size >= size + min_new_size) {
     	// we can insert a new slot and use the orgianl space
     	slot *new_slot = (slot *)((char *)cur_slot + sizeof(slot) + size);
@@ -192,7 +193,7 @@ void *mm_realloc(void *ptr, size_t size) {
     		tail->size = size;
     		return (void *)((char *)tail + sizeof(slot));
     	}
-    }
+    }**/
     void *new_ptr = mm_malloc(size);
     if (new_ptr == NULL) return NULL;
     if (size >= cur_slot->size) {
