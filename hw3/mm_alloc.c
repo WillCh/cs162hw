@@ -116,6 +116,7 @@ void *mm_malloc(size_t size) {
     } else {
     	// need to move the brk
     	slot *new_slot = sbrk(sizeof(slot) + size);
+    	if (new_slot == -1) return NULL;
     	memset(new_slot, 0, sizeof(slot) + size);
     	new_slot->next = NULL;
     	new_slot->prev = tail;
