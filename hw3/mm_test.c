@@ -38,5 +38,7 @@ int main(int argc, char **argv) {
     data = (int *) mm_realloc(data, sizeof(int) * 2);
     print_array(data, 2);
     debug_print_list();
+    mm_free(data);
+    debug_print_list();
     return 0;
 }

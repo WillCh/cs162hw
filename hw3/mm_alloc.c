@@ -71,12 +71,19 @@ slot* find_list_elem_data_location(void *data_pnt) {
 void merge_free_space(slot* slot_pnt) {
 	// merge to the following slot
 	slot* iter = slot_pnt->next;
+	slot* last = slot_pnt;
 	while (iter != NULL && (iter->isFree)) {
 		slot_pnt->size += iter->size + sizeof(slot);
-		if (iter == tail) {
-			tail = slot_pnt;
-		}
+		last = iter;
 		iter = iter->next;
+	}
+	if (last != slot_pnt) {
+		slot_pnt->next = last->next;
+		if (last->next == NULL) {
+			tail = slot_pnt;
+		} else {
+			last->next->prev = slot_pnt;
+		}
 	}
 	// set them to be zero
 	memset(slot_pnt + sizeof(slot), 0, slot_pnt->size);
