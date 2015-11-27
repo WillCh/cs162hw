@@ -80,6 +80,9 @@ typedef enum {
 } msgtype_t;
 
 /* Possible TPC states. */
+// WAIT is before 1 phase
+// ready is finished 1 phase
+// abort and commit is the abort and commit
 typedef enum {
   TPC_INIT,
   TPC_WAIT,

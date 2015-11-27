@@ -12,6 +12,9 @@
 #include "tpclog.h"
 #include "socket_server.h"
 
+void do_log (kvserver_t *server);
+char *parse_log(char *data, int len);
+
 /* Initializes a kvserver. Will return 0 if successful, or a negative error
  * code if not. DIRNAME is the directory which should be used to store entries
  * for this server.  HOSTNAME and PORT indicate where SERVER will be
@@ -122,10 +125,73 @@ int kvserver_del(kvserver_t *server, char *key) {
  * be able to recreate the current state of the server upon recovering from
  * failure. See the spec for details on logic and error messages.
  */
+ // i.e. read from req, and decide the proper behavior and revise
+ // the res as the respond
+ // only handle the PUTREQ, DELREQ, COMMIT, ABORT...
 void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res) {
   /* TODO: Implement me! */
-  res->type = ERROR;
-  alloc_msg(res->body, ERRMSG_NOT_IMPLEMENTED);
+  if (req->type == PUTREQ) {
+    int check_res = kvserver_put_check(server, req->key, req->val);
+    if (check_res == 0) {
+      // OK to put command into the log
+      tpclog_log(&(server->log), req->type, req->key, req->val);
+      res->type = VOTE;
+      alloc_msg(res->body, MSG_COMMIT);
+      server->state = TPC_READY;
+    } else {
+      res->type = VOTE;
+      alloc_msg(res->body, GETMSG(check_res));
+    }
+  } else if (req->type == DELREQ) {
+    int check_res = kvserver_del_check(server, req->key);
+    res->type = VOTE;
+    if (check_res == 0) {
+      tpclog_log(&(server->log), req->type, req->key, NULL);
+      alloc_msg(res->body, MSG_COMMIT);
+      server->state = TPC_READY;
+    } else {
+      alloc_msg(res->body, GETMSG(check_res));
+    }
+  } else if (req->type == COMMIT) {
+    if (server->state == TPC_READY) {
+      tpclog_log(&(server->log), req->type, NULL, NULL);
+      res->type = ACK;
+      server->state = TPC_COMMIT;
+      // we need to do the work from the log
+      // do all the work
+      do_log (server);
+      server->state = TPC_WAIT;
+    } else {
+      // we should return an error
+      res->type = ERROR;
+      alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
+    }
+  } else if (req->type == ABORT) {
+    if (server->state == TPC_READY) {
+      tpclog_log(&(server->log), req->type, NULL, NULL);
+      res->type = ACK;
+      server->state = TPC_ABORT;
+      // we need to do the work from the log
+      // drop all the log 
+      tpclog_clear_log (&(server->log));
+      server->state = TPC_WAIT;
+    } else {
+      // we should return an error
+      res->type = ERROR;
+      alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
+    }
+  } else if (req->type == GETREQ) {
+    // don't need to do log
+    res->type = GETRESP;
+    // the res->body's memory is allocated
+    int get_res = kvserver_get(server, req->key, &(res->body));
+    if (get_res != 0) {
+      res->type = ERROR;
+      alloc_msg(res->body, ERRMSG_GENERIC_ERROR);
+    }
+  }
+  // res->type = ERROR;
+  // alloc_msg(res->body, ERRMSG_NOT_IMPLEMENTED);
 }
 
 /* Generic entrypoint for this SERVER. Takes in a socket on SOCKFD, which
@@ -175,4 +241,32 @@ int kvserver_rebuild_state(kvserver_t *server) {
  * to reinitialize SERVER following this action. */
 int kvserver_clean(kvserver_t *server) {
   return kvstore_clean(&server->store);
+}
+
+// do all the command from the log
+
+void do_log (kvserver_t *server) {
+  logentry_t *iter = NULL;
+  for (tpclog_iterate_begin(&(server->log)); tpclog_iterate_has_next(&(server->log));
+    iter = tpclog_iterate_next(&(server->log))) {
+    if (iter->type == PUTREQ) {
+      // do the put
+      kvserver_put (server, iter->data, parse_log(iter->data, iter->length));
+    } else if (iter->type == DELREQ) {
+      kvserver_del (server, iter->data);
+    } 
+  }
+}
+
+// parse the log data by \0;
+// key \0 val \0
+// return val start address
+char *parse_log(char *data, int len) {
+  int i = 0;
+  for (; i < len; i++) {
+    if (data[i] == 0) {
+      return (data + i + 1);
+    }
+  }
+  return NULL;
 }
