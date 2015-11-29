@@ -12,7 +12,7 @@
 #include "time.h"
 #include "tpcleader.h"
 
-#define TIMEOUT 2
+#define TIMEOUT 5
 
 /* Initializes a tpcleader. Will return 0 if successful, or a negative error
  * code if not. FOLLOWER_CAPACITY indicates the maximum number of followers that
@@ -198,15 +198,22 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
     bool is_commit = true;
     while (pri != NULL && visited_node < leader->redundancy) {
       int socktmpfd = -1;
-      while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
-      // send the req to it
-      printf("send to %d\n", visited_node);
-      kvrequest_send(req, socktmpfd);
-      kvresponse_t *restmp = kvresponse_recieve(socktmpfd);
-      if (!(restmp != NULL && !strcmp(restmp->body, "commit"))) {
+      // while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
+      socktmpfd = connect_to(pri->host, pri->port, TIMEOUT);
+      if (socktmpfd == -1) {
         is_commit = false;
+      } else {
+        // send the req to it
+        printf("send to %d\n", visited_node);
+        kvrequest_send(req, socktmpfd);
+        kvresponse_t *restmp = kvresponse_recieve(socktmpfd);
+        if (!(restmp != NULL && !strcmp(restmp->body, "commit"))) {
+          is_commit = false;
+        }
+        kvresponse_free(restmp);
+        close(socktmpfd);
       }
-      close(socktmpfd);
+      
       pri = tpcleader_get_successor(leader, pri);
       visited_node++;
     }
@@ -225,8 +232,8 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       printf("succeed\n");
     }
     // send the message
-    
-
+    printf("sleep for 10sec\n");
+    sleep (20);
     bool is_all_acked = true;
     do {
       is_all_acked = true;
@@ -236,10 +243,11 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
         int socktmpfd = -1;
         while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
         kvrequest_send(res_client, socktmpfd);
-        printf("herre\n");
+        printf("iter: %d, %d\n", visited_node, pri->port);
         kvresponse_t *restmp = kvresponse_recieve(socktmpfd);
         if (!(restmp != NULL && restmp->type == ACK)) {
           is_all_acked = false;
+          printf("unacked\n");
         }
         kvresponse_free(restmp);
         close(socktmpfd);
