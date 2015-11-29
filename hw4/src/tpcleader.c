@@ -195,16 +195,22 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
 
     tpcfollower_t *pri = tpcleader_get_primary(leader, req->key);
     int visited_node = 0;
+    bool is_commit = true;
     while (pri != NULL && visited_node < leader->redundancy) {
       int socktmpfd = -1;
       while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
       // send the req to it
       printf("send to %d\n", visited_node);
       kvrequest_send(req, socktmpfd);
+      kvresponse_t *restmp = kvresponse_recieve(socktmpfd);
+      if (!(restmp != NULL && !strcmp(restmp->body, "commit"))) {
+        is_commit = false;
+      }
       close(socktmpfd);
       pri = tpcleader_get_successor(leader, pri);
       visited_node++;
     }
+    /**
     // collect the followers vote
     pri = tpcleader_get_primary(leader, req->key);
     visited_node = 0;
@@ -229,8 +235,9 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       pri = tpcleader_get_successor(leader, pri);
       visited_node++;
     }
+    **/
     kvrequest_t *res_client = calloc(1, sizeof(kvrequest_t));
-    if (visited_node < leader->redundancy) {
+    if (!is_commit) {
       // abort
       res_client->type = ABORT;
       res->type = ERROR;
