@@ -130,6 +130,7 @@ int kvserver_del(kvserver_t *server, char *key) {
  // only handle the PUTREQ, DELREQ, COMMIT, ABORT...
 void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res) {
   /* TODO: Implement me! */
+  printf("received at client(%s): %d, %s, %s\n", server->log.dirname, req->type, req->key, req->val);
   if (req->type == PUTREQ) {
     int check_res = kvserver_put_check(server, req->key, req->val);
     if (check_res == 0) {
@@ -160,6 +161,7 @@ void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res
       // we need to do the work from the log
       // do all the work
       do_log (server);
+      tpclog_clear_log (&(server->log));
       server->state = TPC_WAIT;
     } else {
       // we should return an error
@@ -190,6 +192,7 @@ void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res
       alloc_msg(res->body, ERRMSG_GENERIC_ERROR);
     }
   }
+  printf("send from client(%s): %d, %s\n", server->log.dirname, res->type, res->body);
   // res->type = ERROR;
   // alloc_msg(res->body, ERRMSG_NOT_IMPLEMENTED);
 }
@@ -247,11 +250,14 @@ int kvserver_clean(kvserver_t *server) {
 
 void do_log (kvserver_t *server) {
   logentry_t *iter = NULL;
-  for (tpclog_iterate_begin(&(server->log)); tpclog_iterate_has_next(&(server->log));
-    iter = tpclog_iterate_next(&(server->log))) {
+  tpclog_iterate_begin(&(server->log));
+  while (tpclog_iterate_has_next(&(server->log))) {
+    iter = tpclog_iterate_next(&(server->log));
+    printf("Inside do log: %d, %s\n", iter->type, iter->data );
     if (iter->type == PUTREQ) {
       // do the put
       kvserver_put (server, iter->data, parse_log(iter->data, iter->length));
+
     } else if (iter->type == DELREQ) {
       kvserver_del (server, iter->data);
     } 

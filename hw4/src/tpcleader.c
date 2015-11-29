@@ -12,6 +12,8 @@
 #include "time.h"
 #include "tpcleader.h"
 
+#define TIMEOUT 100
+
 /* Initializes a tpcleader. Will return 0 if successful, or a negative error
  * code if not. FOLLOWER_CAPACITY indicates the maximum number of followers that
  * the leader will support. REDUNDANCY is the number of replicas (followers) that
@@ -138,8 +140,39 @@ tpcfollower_t *tpcleader_get_successor(tpcleader_t *leader,
  */
 void tpcleader_handle_get(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *res) {
   /* TODO: Implement me! */
-  res->type = ERROR;
-  alloc_msg(res->body, ERRMSG_NOT_IMPLEMENTED);
+  // find the correct follower to send the res
+  // it need multiple threads?
+  printf("inside the handle get: %d, %s\n", req->type, req->key);
+  tpcfollower_t *pri = tpcleader_get_primary(leader, req->key);
+  bool succeed = false;
+  int visited_node = 0;
+  while (pri != NULL && visited_node < leader->redundancy) {
+    int socketid = connect_to(pri->host, pri->port, TIMEOUT);
+    kvrequest_send(req, socketid);
+    kvresponse_t *restmp = kvresponse_recieve(socketid);
+    printf("received: %d, %s\n", restmp->type, restmp->body);
+    visited_node++;
+    if (restmp != NULL && restmp->type == GETRESP) {
+      // copy the received rest to the res
+      res->type = GETRESP;
+      alloc_msg(res->body, restmp->body);
+      kvresponse_free(restmp);
+      close(socketid);
+      succeed = true;    
+      break;
+    } else {
+      // communicate with second one
+      pri = tpcleader_get_successor(leader, pri);
+      if (restmp != NULL) {
+        kvresponse_free(restmp);
+      }
+      close(socketid);
+    }
+  }
+  if (!succeed) {
+    res->type = ERROR;
+    alloc_msg(res->body, "fail to get the contents");
+  } 
 }
 
 /* Handles an incoming TPC request REQ, and populates RES as a response.
@@ -157,8 +190,97 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
     return;
   }
   /* TODO: Implement me! */
-  res->type = ERROR;
-  alloc_msg(res->body, ERRMSG_NOT_IMPLEMENTED);
+  if (req->type == PUTREQ || req->type == DELREQ) {
+    printf("inside handle tpc\n");
+    int sockfd[leader->redundancy];
+    tpcfollower_t *pri = tpcleader_get_primary(leader, req->key);
+    int visited_node = 0;
+    while (pri != NULL && visited_node < leader->redundancy) {
+      sockfd[visited_node] = connect_to(pri->host, pri->port, TIMEOUT);
+      // send the req to it
+      printf("send to %d\n", visited_node);
+      kvrequest_send(req, sockfd[visited_node]);
+      pri = tpcleader_get_successor(leader, pri);
+      visited_node++;
+    }
+    // collect the followers vote
+    visited_node = 0;
+    while (visited_node < leader->redundancy) {
+      kvresponse_t *restmp = kvresponse_recieve(sockfd[visited_node]);
+      if (restmp->type != VOTE) {
+        kvresponse_free(restmp);
+        break;
+      } else {
+        if (strcmp(restmp->body, "commit")) {
+          //it's not commit
+          kvresponse_free(restmp);
+          break;
+        }
+      }
+      kvresponse_free(restmp);
+      visited_node++;
+    }
+    kvrequest_t *res_client = calloc(1, sizeof(kvrequest_t));
+    if (visited_node < leader->redundancy) {
+      // abort
+      res_client->type = ABORT;
+      res->type = ERROR;
+      alloc_msg(res->body, "abort the command");
+      printf("abort\n");
+    } else {
+      // commit
+      res_client->type = COMMIT;
+      res->type = SUCCESS;
+      printf("succeed\n");
+    }
+    // send the message
+    bool all_acked = false;
+    bool acked[leader->redundancy];
+    int i = 0;
+    for (; i < leader->redundancy; i++) {
+      acked[i] = false;
+    }
+    
+    visited_node = 0;
+    pri = tpcleader_get_primary(leader, req->key);
+    while (pri != NULL && visited_node < leader->redundancy) {
+      close(sockfd[visited_node]);
+      sockfd[visited_node] = connect_to(pri->host, pri->port, TIMEOUT);
+      // send the req to it
+      pri = tpcleader_get_successor(leader, pri);
+      visited_node++;
+    }
+  
+    while (!all_acked) {
+      visited_node = 0;
+      for (; visited_node < leader->redundancy; visited_node++) {
+        if (!acked[visited_node]) {
+          int sent_res = kvrequest_send(res_client, sockfd[visited_node]);
+          printf("send commit %d, %d\n", visited_node, sent_res);
+        }
+      }
+      visited_node = 0;
+      all_acked = true;
+      for (; visited_node < leader->redundancy; visited_node++) {
+        if (!acked[visited_node]) {
+          kvresponse_t *restmp = kvresponse_recieve(sockfd[visited_node]);
+          if (restmp != NULL && restmp->type == ACK) {
+            printf("received %d\n", visited_node);
+            acked[visited_node] = true;
+            close(sockfd[visited_node]);
+          } else {
+            printf("received error %d\n", visited_node);
+            all_acked = false;
+          }
+        }
+      }
+    }
+    printf("finished ack\n");
+    kvrequest_free(res_client);
+  } else {
+    res->type = ERROR;
+    alloc_msg(res->body, "unknown message type");
+  }
 }
 
 
@@ -171,7 +293,8 @@ void tpcleader_handle(tpcleader_t *leader, int sockfd) {
 
   kvrequest_t *req;
   req = kvrequest_recieve(sockfd);
-
+  //
+  printf("get a message: %d, %s, %s\n", req->type, req->key, req->val);
   do {
     if (!req) {
       res->type = ERROR;
