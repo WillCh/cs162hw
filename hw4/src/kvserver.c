@@ -166,7 +166,7 @@ void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res
       alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
     }
   } else if (req->type == COMMIT) {
-    if (server->state == TPC_READY) {
+    //if (server->state == TPC_READY) {
       tpclog_log(&(server->log), req->type, NULL, NULL);
       res->type = ACK;
       server->state = TPC_COMMIT;
@@ -175,13 +175,15 @@ void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res
       do_log (server);
       tpclog_clear_log (&(server->log));
       server->state = TPC_WAIT;
+    /**
     } else {
       // we should return an error
       res->type = ERROR;
       alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
     }
+    **/
   } else if (req->type == ABORT) {
-    if (server->state == TPC_READY) {
+    //if (server->state == TPC_READY) {
       tpclog_log(&(server->log), req->type, NULL, NULL);
       res->type = ACK;
       server->state = TPC_ABORT;
@@ -189,11 +191,13 @@ void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res
       // drop all the log 
       tpclog_clear_log (&(server->log));
       server->state = TPC_WAIT;
+    /**
     } else {
       // we should return an error
       res->type = ERROR;
       alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
     }
+    **/
   } else if (req->type == GETREQ) {
     // don't need to do log
     res->type = GETRESP;
@@ -248,7 +252,35 @@ void kvserver_handle(kvserver_t *server, int sockfd, void *extra) {
  */
 int kvserver_rebuild_state(kvserver_t *server) {
   /* TODO: Implement me! */
-  return -1;
+  // iterate though the logs to re-do the actions
+  // we need to recover the state as well
+  logentry_t *iter = NULL;
+  tpclog_iterate_begin(&(server->log));
+  while (tpclog_iterate_has_next(&(server->log))) {
+    iter = tpclog_iterate_next(&(server->log));
+    /**
+    printf("Inside do log: %d, %s\n", iter->type, iter->data );
+    if (iter->type == PUTREQ) {
+      // do the put
+      kvserver_put (server, iter->data, parse_log(iter->data, iter->length));
+
+    } else if (iter->type == DELREQ) {
+      kvserver_del (server, iter->data);
+    } **/
+  }
+  if (iter->type == PUTREQ || iter->type == DELREQ) {
+    server->state = TPC_READY;
+  } else if (iter->type == COMMIT) {
+    do_log(server);
+    tpclog_clear_log (&(server->log));
+    server->state = TPC_WAIT;
+    // need to send the ack
+  } else if (iter->type == ABORT) {
+    tpclog_clear_log (&(server->log));
+    server->state = TPC_WAIT;
+    // need to send the ack
+  }
+  return 0;
 }
 
 /* Deletes all current entries in SERVER's store and removes the store
