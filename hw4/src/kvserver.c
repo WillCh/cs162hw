@@ -132,37 +132,38 @@ void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res
   /* TODO: Implement me! */
   printf("received at client(%s): %d, %s, %s\n", server->log.dirname, req->type, req->key, req->val);
   if (req->type == PUTREQ) {
-    int check_res = kvserver_put_check(server, req->key, req->val);
-    if (check_res == 0) {
-      // check the state
-      if (server->state == TPC_INIT || server->state == TPC_WAIT) {
+    if (server->state == TPC_INIT || server->state == TPC_WAIT) {
+      int check_res = kvserver_put_check(server, req->key, req->val);
+      if (check_res == 0) {
+        // check the state
         // OK to put command into the log
         tpclog_log(&(server->log), req->type, req->key, req->val);
         res->type = VOTE;
         alloc_msg(res->body, MSG_COMMIT);
         server->state = TPC_READY;
+      
       } else {
-        res->type = ERROR;
-        alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
+        res->type = VOTE;
+        alloc_msg(res->body, GETMSG(check_res));
       }
     } else {
-      res->type = VOTE;
-      alloc_msg(res->body, GETMSG(check_res));
+      res->type = ERROR;
+      alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
     }
   } else if (req->type == DELREQ) {
-    int check_res = kvserver_del_check(server, req->key);
-    res->type = VOTE;
-    if (check_res == 0) {
-      if (server->state == TPC_INIT || server->state == TPC_WAIT) {
+    if (server->state == TPC_INIT || server->state == TPC_WAIT) {
+      int check_res = kvserver_del_check(server, req->key);
+      res->type = VOTE;
+      if (check_res == 0) {
         tpclog_log(&(server->log), req->type, req->key, NULL);
         alloc_msg(res->body, MSG_COMMIT);
         server->state = TPC_READY;
       } else {
-        res->type = ERROR;
-        alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
+        alloc_msg(res->body, GETMSG(check_res));
       }
     } else {
-      alloc_msg(res->body, GETMSG(check_res));
+      res->type = ERROR;
+      alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
     }
   } else if (req->type == COMMIT) {
     if (server->state == TPC_READY) {
