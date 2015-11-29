@@ -12,7 +12,7 @@
 #include "time.h"
 #include "tpcleader.h"
 
-#define TIMEOUT 100
+#define TIMEOUT 5
 
 /* Initializes a tpcleader. Will return 0 if successful, or a negative error
  * code if not. FOLLOWER_CAPACITY indicates the maximum number of followers that
@@ -196,7 +196,9 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
     tpcfollower_t *pri = tpcleader_get_primary(leader, req->key);
     int visited_node = 0;
     while (pri != NULL && visited_node < leader->redundancy) {
-      sockfd[visited_node] = connect_to(pri->host, pri->port, TIMEOUT);
+      int socktmpfd = -1;
+      while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
+      sockfd[visited_node] = socktmpfd;
       // send the req to it
       printf("send to %d\n", visited_node);
       kvrequest_send(req, sockfd[visited_node]);
