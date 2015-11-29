@@ -134,11 +134,17 @@ void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res
   if (req->type == PUTREQ) {
     int check_res = kvserver_put_check(server, req->key, req->val);
     if (check_res == 0) {
-      // OK to put command into the log
-      tpclog_log(&(server->log), req->type, req->key, req->val);
-      res->type = VOTE;
-      alloc_msg(res->body, MSG_COMMIT);
-      server->state = TPC_READY;
+      // check the state
+      if (server->state == TPC_INIT || server->state == TPC_WAIT) {
+        // OK to put command into the log
+        tpclog_log(&(server->log), req->type, req->key, req->val);
+        res->type = VOTE;
+        alloc_msg(res->body, MSG_COMMIT);
+        server->state = TPC_READY;
+      } else {
+        res->type = ERROR;
+        alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
+      }
     } else {
       res->type = VOTE;
       alloc_msg(res->body, GETMSG(check_res));
@@ -147,9 +153,14 @@ void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res
     int check_res = kvserver_del_check(server, req->key);
     res->type = VOTE;
     if (check_res == 0) {
-      tpclog_log(&(server->log), req->type, req->key, NULL);
-      alloc_msg(res->body, MSG_COMMIT);
-      server->state = TPC_READY;
+      if (server->state == TPC_INIT || server->state == TPC_WAIT) {
+        tpclog_log(&(server->log), req->type, req->key, NULL);
+        alloc_msg(res->body, MSG_COMMIT);
+        server->state = TPC_READY;
+      } else {
+        res->type = ERROR;
+        alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
+      }
     } else {
       alloc_msg(res->body, GETMSG(check_res));
     }
