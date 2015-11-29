@@ -228,8 +228,10 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
     visited_node = 0;
 
     bool is_all_acked = true;
-    pri = tpcleader_get_primary(leader, req->key);
+    
     do {
+      is_all_acked = true;
+      pri = tpcleader_get_primary(leader, req->key);
       while (visited_node < leader->redundancy) {      
         int socktmpfd = -1;
         while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
