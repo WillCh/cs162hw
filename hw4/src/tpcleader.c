@@ -241,16 +241,22 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       pri = tpcleader_get_primary(leader, req->key);
       while (pri != NULL && visited_node < leader->redundancy) {      
         int socktmpfd = -1;
-        while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
-        kvrequest_send(res_client, socktmpfd);
-        printf("iter: %d, %d\n", visited_node, pri->port);
-        kvresponse_t *restmp = kvresponse_recieve(socktmpfd);
-        if (!(restmp != NULL && restmp->type == ACK)) {
+        // while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
+        socktmpfd = connect_to(pri->host, pri->port, TIMEOUT);
+        if (socktmpfd == -1) {
           is_all_acked = false;
-          printf("unacked\n");
+        } else {
+          kvrequest_send(res_client, socktmpfd);
+          printf("iter: %d, %d\n", visited_node, pri->port);
+          kvresponse_t *restmp = kvresponse_recieve(socktmpfd);
+          if (!(restmp != NULL && restmp->type == ACK)) {
+            is_all_acked = false;
+            printf("unacked\n");
+          }
+          kvresponse_free(restmp);
+          close(socktmpfd);
         }
-        kvresponse_free(restmp);
-        close(socktmpfd);
+        
 
         pri = tpcleader_get_successor(leader, pri);
         visited_node++;
