@@ -268,17 +268,19 @@ int kvserver_rebuild_state(kvserver_t *server) {
       kvserver_del (server, iter->data);
     } **/
   }
-  if (iter->type == PUTREQ || iter->type == DELREQ) {
-    server->state = TPC_READY;
-  } else if (iter->type == COMMIT) {
-    do_log(server);
-    tpclog_clear_log (&(server->log));
-    server->state = TPC_WAIT;
-    // need to send the ack
-  } else if (iter->type == ABORT) {
-    tpclog_clear_log (&(server->log));
-    server->state = TPC_WAIT;
-    // need to send the ack
+  if (iter != NULL) {
+    if (iter->type == PUTREQ || iter->type == DELREQ) {
+      server->state = TPC_READY;
+    } else if (iter->type == COMMIT) {
+      do_log(server);
+      tpclog_clear_log (&(server->log));
+      server->state = TPC_WAIT;
+      // need to send the ack
+    } else if (iter->type == ABORT) {
+      tpclog_clear_log (&(server->log));
+      server->state = TPC_WAIT;
+      // need to send the ack
+    }
   }
   return 0;
 }
