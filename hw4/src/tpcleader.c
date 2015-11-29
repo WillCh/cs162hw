@@ -225,12 +225,12 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       printf("succeed\n");
     }
     // send the message
-    visited_node = 0;
+    
 
     bool is_all_acked = true;
-    
     do {
       is_all_acked = true;
+      visited_node = 0;
       pri = tpcleader_get_primary(leader, req->key);
       while (visited_node < leader->redundancy) {      
         int socktmpfd = -1;
