@@ -171,7 +171,7 @@ void tpcleader_handle_get(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
   }
   if (!succeed) {
     res->type = ERROR;
-    alloc_msg(res->body, "fail to get the contents");
+    alloc_msg(res->body, ERRMSG_NO_KEY);
   } 
 }
 
