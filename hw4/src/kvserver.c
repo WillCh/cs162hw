@@ -166,7 +166,7 @@ void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res
       alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
     }
   } else if (req->type == COMMIT) {
-    //if (server->state == TPC_READY) {
+    if (server->state == TPC_READY) {
       tpclog_log(&(server->log), req->type, NULL, NULL);
       res->type = ACK;
       server->state = TPC_COMMIT;
@@ -175,15 +175,19 @@ void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res
       do_log (server);
       tpclog_clear_log (&(server->log));
       server->state = TPC_WAIT;
-    /**
+    } else if (server->state == TPC_COMMIT) {
+      // it said we recoverd from the commit
+      // then we should return an ack
+      res->type = ACK;
+      server->state = TPC_WAIT;
     } else {
       // we should return an error
       res->type = ERROR;
       alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
     }
-    **/
+    
   } else if (req->type == ABORT) {
-    //if (server->state == TPC_READY) {
+    if (server->state == TPC_READY) {
       tpclog_log(&(server->log), req->type, NULL, NULL);
       res->type = ACK;
       server->state = TPC_ABORT;
@@ -191,13 +195,17 @@ void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res
       // drop all the log 
       tpclog_clear_log (&(server->log));
       server->state = TPC_WAIT;
-    /**
+    } else if (server->state == TPC_ABORT) {
+      // it said we recoverd from the commit
+      // then we should return an ack
+      res->type = ACK;
+      server->state = TPC_WAIT;
     } else {
       // we should return an error
       res->type = ERROR;
       alloc_msg(res->body, ERRMSG_INVALID_REQUEST);
     }
-    **/
+    
   } else if (req->type == GETREQ) {
     // don't need to do log
     res->type = GETRESP;
@@ -274,11 +282,11 @@ int kvserver_rebuild_state(kvserver_t *server) {
     } else if (iter->type == COMMIT) {
       do_log(server);
       tpclog_clear_log (&(server->log));
-      server->state = TPC_WAIT;
+      server->state = TPC_COMMIT;
       // need to send the ack
     } else if (iter->type == ABORT) {
       tpclog_clear_log (&(server->log));
-      server->state = TPC_WAIT;
+      server->state = TPC_ABORT;
       // need to send the ack
     }
   }
