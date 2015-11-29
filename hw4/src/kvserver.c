@@ -132,6 +132,7 @@ void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res
   /* TODO: Implement me! */
   printf("received at client(%s): %d, %s, %s\n", server->log.dirname, req->type, req->key, req->val);
   if (req->type == PUTREQ) {
+    printf("the state is %d\n", server->state);
     if (server->state == TPC_INIT || server->state == TPC_WAIT) {
       int check_res = kvserver_put_check(server, req->key, req->val);
       if (check_res == 0) {
@@ -289,11 +290,11 @@ int kvserver_rebuild_state(kvserver_t *server) {
     } else if (iter->type == COMMIT) {
       do_log(server);
       tpclog_clear_log (&(server->log));
-      server->state = TPC_READY;
+      server->state = TPC_WAIT;
       // need to send the ack
     } else if (iter->type == ABORT) {
       tpclog_clear_log (&(server->log));
-      server->state = TPC_READY;
+      server->state = TPC_WAIT;
       // need to send the ack
     }
   }

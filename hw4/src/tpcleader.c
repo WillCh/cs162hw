@@ -236,6 +236,28 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       printf("succeed\n");
     }
     // send the message
+    visited_node = 0;
+
+
+    pri = tpcleader_get_primary(leader, req->key);
+    while (visited_node < leader->redundancy) {
+      bool acked = false;
+      do {
+        int socktmpfd = -1;
+        while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
+        kvrequest_send(res_client, socktmpfd);
+        printf("herre\n");
+        kvresponse_t *restmp = kvresponse_recieve(socktmpfd);
+        if (restmp != NULL && restmp->type == ACK) {
+          acked = true;
+        }
+        kvresponse_free(restmp);
+        close(socktmpfd);
+      } while (!acked);
+      pri = tpcleader_get_successor(leader, pri);
+      visited_node++;
+    }
+    /**
     bool all_acked = false;
     bool acked[leader->redundancy];
     int i = 0;
@@ -252,7 +274,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       pri = tpcleader_get_successor(leader, pri);
       visited_node++;
     }
-  
+    
     while (!all_acked) {
       visited_node = 0;
       for (; visited_node < leader->redundancy; visited_node++) {
@@ -281,6 +303,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
         pri = tpcleader_get_successor(leader, pri);
       }
     }
+    **/
     printf("finished ack\n");
     kvrequest_free(res_client);
   } else {
