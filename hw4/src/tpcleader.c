@@ -192,34 +192,41 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
   /* TODO: Implement me! */
   if (req->type == PUTREQ || req->type == DELREQ) {
     printf("inside handle tpc\n");
-    int sockfd[leader->redundancy];
+
     tpcfollower_t *pri = tpcleader_get_primary(leader, req->key);
     int visited_node = 0;
     while (pri != NULL && visited_node < leader->redundancy) {
       int socktmpfd = -1;
       while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
-      sockfd[visited_node] = socktmpfd;
       // send the req to it
       printf("send to %d\n", visited_node);
-      kvrequest_send(req, sockfd[visited_node]);
+      kvrequest_send(req, socktmpfd);
+      close(socktmpfd);
       pri = tpcleader_get_successor(leader, pri);
       visited_node++;
     }
     // collect the followers vote
+    pri = tpcleader_get_primary(leader, req->key);
     visited_node = 0;
     while (visited_node < leader->redundancy) {
-      kvresponse_t *restmp = kvresponse_recieve(sockfd[visited_node]);
+      int socktmpfd = -1;
+      while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
+      kvresponse_t *restmp = kvresponse_recieve(socktmpfd);
       if (restmp == NULL || restmp->type != VOTE) {
         kvresponse_free(restmp);
+        close(socktmpfd);
         break;
       } else {
         if (strcmp(restmp->body, "commit")) {
           //it's not commit
           kvresponse_free(restmp);
+          close(socktmpfd);
           break;
         }
       }
+      close(socktmpfd);
       kvresponse_free(restmp);
+      pri = tpcleader_get_successor(leader, pri);
       visited_node++;
     }
     kvrequest_t *res_client = calloc(1, sizeof(kvrequest_t));
