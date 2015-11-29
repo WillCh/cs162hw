@@ -232,8 +232,8 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       printf("succeed\n");
     }
     // send the message
-    printf("sleep for 10sec\n");
-    sleep (20);
+    // printf("sleep for 10sec\n");
+    // sleep (20);
     bool is_all_acked = true;
     do {
       is_all_acked = true;
