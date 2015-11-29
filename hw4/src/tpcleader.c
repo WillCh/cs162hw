@@ -232,7 +232,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       is_all_acked = true;
       visited_node = 0;
       pri = tpcleader_get_primary(leader, req->key);
-      while (visited_node < leader->redundancy) {      
+      while (pri != NULL && visited_node < leader->redundancy) {      
         int socktmpfd = -1;
         while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
         kvrequest_send(res_client, socktmpfd);
