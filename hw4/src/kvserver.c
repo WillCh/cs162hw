@@ -189,7 +189,7 @@ void kvserver_handle_tpc(kvserver_t *server, kvrequest_t *req, kvresponse_t *res
     int get_res = kvserver_get(server, req->key, &(res->body));
     if (get_res != 0) {
       res->type = ERROR;
-      alloc_msg(res->body, ERRMSG_GENERIC_ERROR);
+      alloc_msg(res->body, GETMSG(get_res));
     }
   }
   printf("send from client(%s): %d, %s\n", server->log.dirname, res->type, res->body);
