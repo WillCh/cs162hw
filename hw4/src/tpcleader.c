@@ -12,7 +12,7 @@
 #include "time.h"
 #include "tpcleader.h"
 
-#define TIMEOUT 5
+#define TIMEOUT 2
 
 /* Initializes a tpcleader. Will return 0 if successful, or a negative error
  * code if not. FOLLOWER_CAPACITY indicates the maximum number of followers that
@@ -210,32 +210,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       pri = tpcleader_get_successor(leader, pri);
       visited_node++;
     }
-    /**
-    // collect the followers vote
-    pri = tpcleader_get_primary(leader, req->key);
-    visited_node = 0;
-    while (visited_node < leader->redundancy) {
-      int socktmpfd = -1;
-      while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
-      kvresponse_t *restmp = kvresponse_recieve(socktmpfd);
-      if (restmp == NULL || restmp->type != VOTE) {
-        kvresponse_free(restmp);
-        close(socktmpfd);
-        break;
-      } else {
-        if (strcmp(restmp->body, "commit")) {
-          //it's not commit
-          kvresponse_free(restmp);
-          close(socktmpfd);
-          break;
-        }
-      }
-      close(socktmpfd);
-      kvresponse_free(restmp);
-      pri = tpcleader_get_successor(leader, pri);
-      visited_node++;
-    }
-    **/
+    
     kvrequest_t *res_client = calloc(1, sizeof(kvrequest_t));
     if (!is_commit) {
       // abort
@@ -271,53 +246,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       pri = tpcleader_get_successor(leader, pri);
       visited_node++;
     }
-    /**
-    bool all_acked = false;
-    bool acked[leader->redundancy];
-    int i = 0;
-    for (; i < leader->redundancy; i++) {
-      acked[i] = false;
-    }
     
-    visited_node = 0;
-    pri = tpcleader_get_primary(leader, req->key);
-    while (pri != NULL && visited_node < leader->redundancy) {
-      close(sockfd[visited_node]);
-      sockfd[visited_node] = connect_to(pri->host, pri->port, TIMEOUT);
-      // send the req to it
-      pri = tpcleader_get_successor(leader, pri);
-      visited_node++;
-    }
-    
-    while (!all_acked) {
-      visited_node = 0;
-      for (; visited_node < leader->redundancy; visited_node++) {
-        if (!acked[visited_node]) {
-          int sent_res = kvrequest_send(res_client, sockfd[visited_node]);
-          printf("send commit %d, %d\n", visited_node, sent_res);
-        }
-      }
-      visited_node = 0;
-      all_acked = true;
-      pri = tpcleader_get_primary(leader, req->key);
-      for (; visited_node < leader->redundancy; visited_node++) {
-        if (!acked[visited_node]) {
-          kvresponse_t *restmp = kvresponse_recieve(sockfd[visited_node]);
-          if (restmp != NULL && restmp->type == ACK) {
-            printf("received %d\n", visited_node);
-            acked[visited_node] = true;
-            close(sockfd[visited_node]);
-          } else {
-            printf("received error %d\n", visited_node);
-            all_acked = false;
-            close(sockfd[visited_node]);
-            sockfd[visited_node] = connect_to(pri->host, pri->port, TIMEOUT);
-          }
-        }
-        pri = tpcleader_get_successor(leader, pri);
-      }
-    }
-    **/
     printf("finished ack\n");
     kvrequest_free(res_client);
   } else {
