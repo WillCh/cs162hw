@@ -207,7 +207,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
     visited_node = 0;
     while (visited_node < leader->redundancy) {
       kvresponse_t *restmp = kvresponse_recieve(sockfd[visited_node]);
-      if (restmp->type != VOTE) {
+      if (restmp == NULL || restmp->type != VOTE) {
         kvresponse_free(restmp);
         break;
       } else {
