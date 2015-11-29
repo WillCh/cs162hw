@@ -261,6 +261,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       }
       visited_node = 0;
       all_acked = true;
+      pri = tpcleader_get_primary(leader, req->key);
       for (; visited_node < leader->redundancy; visited_node++) {
         if (!acked[visited_node]) {
           kvresponse_t *restmp = kvresponse_recieve(sockfd[visited_node]);
@@ -271,8 +272,11 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
           } else {
             printf("received error %d\n", visited_node);
             all_acked = false;
+            close(sockfd[visited_node]);
+            sockfd[visited_node] = connect_to(pri->host, pri->port, TIMEOUT);
           }
         }
+        pri = tpcleader_get_successor(leader, pri);
       }
     }
     printf("finished ack\n");
