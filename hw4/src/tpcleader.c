@@ -212,8 +212,9 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
           is_commit = false;
         }
         kvresponse_free(restmp);
+        close(socktmpfd);
       }
-      close(socktmpfd);
+      
       pri = tpcleader_get_successor(leader, pri);
       visited_node++;
     }
@@ -258,8 +259,9 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
             printf("unacked\n");
           }
           kvresponse_free(restmp);
+          close(socktmpfd);
         }
-        close(socktmpfd);
+        
 
         pri = tpcleader_get_successor(leader, pri);
         visited_node++;
