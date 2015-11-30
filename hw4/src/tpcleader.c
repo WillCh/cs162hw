@@ -200,6 +200,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       int socktmpfd = -1;
       // while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
       socktmpfd = connect_to(pri->host, pri->port, TIMEOUT);
+      printf("the follower is %s, %d\n", pri->host, pri->port);
       if (socktmpfd == -1) {
         is_commit = false;
       } else {
@@ -211,9 +212,8 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
           is_commit = false;
         }
         kvresponse_free(restmp);
-        close(socktmpfd);
       }
-      
+      close(socktmpfd);
       pri = tpcleader_get_successor(leader, pri);
       visited_node++;
     }
@@ -233,16 +233,20 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
     }
     // send the message
     // printf("sleep for 10sec\n");
-    // sleep (20);
+    sleep (20);
     bool is_all_acked = true;
     do {
+      printf("inside do while\n");
       is_all_acked = true;
       visited_node = 0;
       pri = tpcleader_get_primary(leader, req->key);
       while (pri != NULL && visited_node < leader->redundancy) {      
         int socktmpfd = -1;
+        printf("inside innerr while: %d\n", visited_node);
+        printf("the node is: %s, %d\n", pri->host, pri->port);
         // while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
         socktmpfd = connect_to(pri->host, pri->port, TIMEOUT);
+        printf("the socktmpfd is %d\n", socktmpfd);
         if (socktmpfd == -1) {
           is_all_acked = false;
         } else {
@@ -254,9 +258,8 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
             printf("unacked\n");
           }
           kvresponse_free(restmp);
-          close(socktmpfd);
         }
-        
+        close(socktmpfd);
 
         pri = tpcleader_get_successor(leader, pri);
         visited_node++;
