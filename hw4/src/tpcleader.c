@@ -12,7 +12,7 @@
 #include "time.h"
 #include "tpcleader.h"
 
-#define TIMEOUT 5
+#define TIMEOUT 2
 
 /* Initializes a tpcleader. Will return 0 if successful, or a negative error
  * code if not. FOLLOWER_CAPACITY indicates the maximum number of followers that
@@ -142,12 +142,18 @@ void tpcleader_handle_get(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
   /* TODO: Implement me! */
   // find the correct follower to send the res
   // it need multiple threads?
+  if (req == NULL) {
+    res->type = ERROR;
+    alloc_msg(res->body, ERRMSG_NO_KEY);
+    return;
+  }
   printf("inside the handle get: %d, %s\n", req->type, req->key);
   tpcfollower_t *pri = tpcleader_get_primary(leader, req->key);
   bool succeed = false;
   int visited_node = 0;
   while (pri != NULL && visited_node < leader->redundancy) {
     int socketid = connect_to(pri->host, pri->port, TIMEOUT);
+    if (socketid == -1) continue;
     kvrequest_send(req, socketid);
     kvresponse_t *restmp = kvresponse_recieve(socketid);
     printf("received: %d, %s\n", restmp->type, restmp->body);
@@ -190,6 +196,11 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
     return;
   }
   /* TODO: Implement me! */
+  if (req == NULL) {
+    res->type = ERROR;
+    alloc_msg(res->body, "unknown message type");
+    return;
+  }
   if (req->type == PUTREQ || req->type == DELREQ) {
     printf("inside handle tpc\n");
 
@@ -200,7 +211,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       int socktmpfd = -1;
       // while((socktmpfd = connect_to(pri->host, pri->port, TIMEOUT)) == -1);
       socktmpfd = connect_to(pri->host, pri->port, TIMEOUT);
-      printf("the follower is %s, %d\n", pri->host, pri->port);
+      printf("the follower is %s, %d, the socket is %d\n", pri->host, pri->port, socktmpfd);
       if (socktmpfd == -1) {
         is_commit = false;
       } else {
@@ -212,6 +223,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
           is_commit = false;
         }
         kvresponse_free(restmp);
+        shutdown(socktmpfd, SHUT_RDWR);
         close(socktmpfd);
       }
       
@@ -259,6 +271,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
             printf("unacked\n");
           }
           kvresponse_free(restmp);
+          shutdown(socktmpfd, SHUT_RDWR);
           close(socktmpfd);
         }
         
