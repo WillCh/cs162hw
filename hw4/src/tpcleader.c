@@ -163,6 +163,7 @@ void tpcleader_handle_get(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       res->type = GETRESP;
       alloc_msg(res->body, restmp->body);
       kvresponse_free(restmp);
+      shutdown(socketid, SHUT_RDWR);
       close(socketid);
       succeed = true;    
       break;
@@ -172,6 +173,7 @@ void tpcleader_handle_get(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       if (restmp != NULL) {
         kvresponse_free(restmp);
       }
+      shutdown(socketid, SHUT_RDWR);
       close(socketid);
     }
   }
@@ -262,6 +264,9 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
         printf("the socktmpfd is %d\n", socktmpfd);
         if (socktmpfd == -1) {
           is_all_acked = false;
+          sleep(1);
+          break;
+
         } else {
           kvrequest_send(res_client, socktmpfd);
           printf("iter: %d, %d\n", visited_node, pri->port);
